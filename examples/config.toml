@@ -1,0 +1,37 @@
+# 基本配置
+download_dir = "./downloads"
+workers = 4
+random_order = false
+rate_limit_kb = 1024  # 1MB/s
+concurrent_downloads = 4
+connection_timeout = 30
+
+# 重试配置
+[retry]
+max_retries = 3
+initial_delay = 1
+max_delay = 30
+backoff_factor = 2.0
+
+# 完整性检查配置
+[integrity_check]
+enabled = true
+algorithm = "MD5"
+
+[integrity_check.checksums]
+"https://raw.githubusercontent.com/rust-lang/rust/master/README.md" = "d41d8cd98f00b204e9800998ecf8427e"
+"https://raw.githubusercontent.com/rust-lang/rust/master/LICENSE-MIT" = "e9d71f5ee7c92d6dc9e92ffdad17b8bd"
+
+# 下载过滤器
+[filter]
+include_patterns = ["*.md", "*.txt", "*.rs"]
+exclude_patterns = ["*.exe", "*.dll"]
+min_size = 1024  # 1KB
+max_size = 1073741824  # 1GB
+
+# 下载链接列表
+urls = [
+    "https://raw.githubusercontent.com/rust-lang/rust/master/README.md",
+    "https://raw.githubusercontent.com/rust-lang/rust/master/LICENSE-MIT",
+    "https://raw.githubusercontent.com/rust-lang/rust/master/COPYRIGHT"
+]
