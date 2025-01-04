@@ -1,0 +1,58 @@
+# Windows GNU 工具链配置
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"
+ar = "x86_64-w64-mingw32-gcc-ar"
+
+# macOS ARM 配置
+[target.aarch64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup"
+]
+
+# Linux 配置 - Ubuntu/Debian
+[target.x86_64-linux-ubuntu-gnu]
+linker = "x86_64-linux-gnu-gcc"
+rustflags = ["-C", "target-cpu=native"]
+
+# 或者选择其他发行版：
+# Debian
+[target.x86_64-linux-debian-gnu]
+linker = "x86_64-linux-gnu-gcc"
+rustflags = ["-C", "target-cpu=native"]
+
+# CentOS/RHEL
+[target.x86_64-linux-centos-gnu]
+linker = "x86_64-linux-gnu-gcc"
+rustflags = ["-C", "target-cpu=native"]
+
+# Fedora
+[target.x86_64-linux-fedora-gnu]
+linker = "x86_64-linux-gnu-gcc"
+rustflags = ["-C", "target-cpu=native"]
+
+[source.crates-io]
+replace-with = 'aliyun' # 指定使用下面哪个源，修改为source.后面的内容即可
+
+#阿里云
+[source.aliyun]
+registry = "sparse+https://mirrors.aliyun.com/crates.io-index/"
+
+# 中国科学技术大学
+[source.ustc]
+registry = "https://mirrors.ustc.edu.cn/crates.io-index"
+
+# 上海交通大学
+[source.sjtu]
+registry = "https://mirrors.sjtug.sjtu.edu.cn/git/crates.io-index/"
+
+# 清华大学
+[source.tuna]
+registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
+
+# rustcc社区
+[source.rustcc]
+registry = "https://code.aliyun.com/rustcc/crates.io-index.git"
+
+[build]
+rustflags = ["-C", "target-cpu=native"] 
