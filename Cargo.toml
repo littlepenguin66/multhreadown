@@ -2,6 +2,14 @@
 name = "multhreadown"
 version = "0.1.0"
 edition = "2021"
+authors = ["littlepenguin66 <littlepenguinzq@gmail.com>"]
+description = "A multi-threaded download manager with resume capability"
+license = "MIT"
+repository = "https://github.com/littlepenguin66/multhreadown"
+documentation = "https://github.com/littlepenguin66/multhreadown/blob/main/README.md"
+readme = "README.md"
+keywords = ["download", "http", "multi-threaded", "downloader"]
+categories = ["network-programming", "asynchronous"]
 
 [dependencies]
 indicatif = { version = "0.17", features = ["tokio"] }
@@ -28,3 +36,11 @@ tempfile = "3.8"
 [[bench]]
 name = "download_bench"
 harness = false
+
+[lib]
+name = "multhreadown"
+path = "src/lib.rs"
+
+[[bin]]
+name = "multhreadown"
+path = "src/main.rs"
