@@ -1,218 +1,160 @@
 # Multhreadown
 
-一个功能强大的多线程下载工具，使用 Rust 编写，专注于性能和可靠性。
+[![Crates.io](https://img.shields.io/crates/v/multhreadown.svg)](https://crates.io/crates/multhreadown)
+[![Documentation](https://docs.rs/multhreadown/badge.svg)](https://docs.rs/multhreadown)
+[![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/multhreadown.svg)](LICENSE)
 
-## ✨ 功能特性
+一个功能强大的多线程下载管理器，支持断点续传、暂停恢复和速率限制。
 
-### 核心功能
+## 特性
 
-- 🚀 多线程并发下载
-- 🔄 断点续传支持
-- 📊 实时进度显示
-- 🔍 文件完整性校验
-- 🔄 智能重试机制
+- 🚀 **多线程下载**：利用多线程并行下载文件的不同部分，显著提高下载速度
+- ⏸️ **暂停与恢复**：支持随时暂停下载并在之后恢复，无需重新开始
+- 📊 **进度跟踪**：实时显示下载进度、速度和剩余时间
+- 🔄 **断点续传**：自动从上次中断的位置继续下载
+- 🚦 **速率限制**：可配置的下载速率限制，避免占用过多带宽
+- 🛡️ **错误处理**：健壮的错误处理和自动重试机制
 
-### 高级特性
+## 安装
 
-- 🎮 交互式命令控制
-- 📈 下载统计和分析
-- 💾 智能缓存管理
-- 🎯 灵活的过滤规则
-- 🎚️ 下载速度限制
-
-## 🚀 快速开始
-
-### 安装
-
-```bash
-# 从源码安装
-git clone https://github.com/little_penguin66/multhreadown.git
-cd multhreadown
-cargo install --path .
-```
-
-### 基本使用
-
-```bash
-# 简单下载
-multhreadown --download-dir ./downloads --urls "https://example.com/file1.zip"
-
-# 多文件下载
-multhreadown --download-dir ./downloads --workers 4 \
-    --urls "https://example.com/file1.zip" "https://example.com/file2.tar.gz"
-
-# 使用配置文件
-multhreadown --config config.toml
-```
-
-## ⚙️ 配置选项
-
-### 命令行参数
-
-```bash
-multhreadown [OPTIONS]
-
-Options:
-  -c, --config <FILE>       配置文件路径
-  -d, --download-dir <DIR>  下载目录 [required]
-  -w, --workers <NUM>       工作线程数 [default: 4]
-  -r, --random-order       随机顺序下载
-  -v, --verbose            详细输出
-  -u, --urls <URLS>...     下载链接列表
-  -h, --help               显示帮助信息
-```
-
-### 配置文件 (config.toml)
+将以下内容添加到您的 `Cargo.toml` 文件中：
 
 ```toml
-# 基本配置
-download_dir = "./downloads"
-workers = 4
-random_order = true
-rate_limit_kb = 1024  # 1MB/s
-concurrent_downloads = 4
-connection_timeout = 30
-
-# 重试配置
-[retry]
-max_retries = 3
-initial_delay = 1
-max_delay = 30
-backoff_factor = 2.0
-
-# 完整性检查
-[integrity_check]
-enabled = true
-algorithm = "MD5"
-
-# 下载过滤器
-[filter]
-include_patterns = ["*.zip", "*.tar.gz"]
-exclude_patterns = ["*.exe"]
-min_size = 1024  # 1KB
-max_size = 1073741824  # 1GB
+[dependencies]
+multhreadown = "0.1.0"
 ```
 
-## 🎮 交互式命令
+## 快速开始
 
-下载过程中支持以下命令：
-
-- `pause`: 暂停下载
-- `resume`: 恢复下载
-- `cancel`: 取消下载
-- `progress`: 显示当前进度
-- `limit <KB>`: 设置下载速度限制
-
-## 💻 编程接口
+### 基本用法
 
 ```rust
-use multhreadown::{config::Config, downloader};
+use multhreadown::{Config, download_all_files, DefaultEventHandler};
+use std::error::Error;
 
-#[tokio::main]
-async fn main() {
-    let config = Config {
-        download_dir: PathBuf::from("downloads"),
-        workers: 4,
-        urls: vec!["https://example.com/file1.zip".to_string()],
-        // ... 其他配置
-    };
+fn main() -> Result<(), Box<dyn Error>> {
+    // 创建下载配置
+    let config = Config::new()
+        .with_threads(4)
+        .with_chunk_size(1024 * 1024)
+        .with_retry_attempts(3);
 
-    if let Err(e) = downloader::download_all_files(config).await {
-        eprintln!("Download failed: {}", e);
-    }
+    // 要下载的文件列表
+    let urls = vec![
+        "https://example.com/file1.zip",
+        "https://example.com/file2.zip",
+    ];
+
+    // 下载目标目录
+    let output_dir = "/path/to/downloads";
+
+    // 创建事件处理器
+    let event_handler = DefaultEventHandler::new();
+
+    // 开始下载
+    download_all_files(&urls, output_dir, &config, event_handler)?;
+
+    println!("所有文件下载完成！");
+    Ok(())
 }
 ```
 
-## 🧪 开发
+### 自定义事件处理
 
-### 运行测试
+您可以实现自己的事件处理器来响应下载过程中的各种事件：
 
-```bash
-# 运行所有测试
-cargo test
+```rust
+use multhreadown::{events::{DownloadEventHandler, DownloadEvent}, DownloadStats};
+use std::sync::Arc;
 
-# 运行特定测试
-cargo test test_basic_download
+struct MyEventHandler;
 
-# 运行带输出的测试
-cargo test -- --nocapture
+impl DownloadEventHandler for MyEventHandler {
+    fn on_event(&self, event: DownloadEvent) {
+        match event {
+            DownloadEvent::DownloadStarted(url) => {
+                println!("开始下载: {}", url);
+            }
+            DownloadEvent::DownloadCompleted(url) => {
+                println!("下载完成: {}", url);
+            }
+            DownloadEvent::ProgressUpdated(url, stats) => {
+                println!(
+                    "{}: 已下载 {}/{} ({:.2}%), 速度: {}/s",
+                    url,
+                    stats.bytes_downloaded,
+                    stats.total_bytes,
+                    stats.progress * 100.0,
+                    format_bytes(stats.download_speed as usize)
+                );
+            }
+            // 处理其他事件...
+            _ => {}
+        }
+    }
+}
+
+fn format_bytes(bytes: usize) -> String {
+    // 实现字节格式化逻辑
+    // ...
+}
 ```
 
-### 运行基准测试
+### 使用缓存管理器
 
-```bash
-# 运行所有基准测试
-cargo bench
+```rust
+use multhreadown::{CacheManager, DownloadCache};
 
-# 运行特定基准测试
-cargo bench -- parallel_download_3_workers
+// 创建缓存管理器
+let cache_manager = CacheManager::new("/path/to/cache/directory")?;
 
-# 生成HTML报告
-cargo bench --bench download_bench -- --baseline main
+// 保存下载状态
+let download_cache = DownloadCache {
+    url: "https://example.com/file.zip".to_string(),
+    file_path: "/path/to/downloads/file.zip".to_string(),
+    total_size: 1024000,
+    downloaded_chunks: vec![(0, 512000)], // 已下载的区块
+};
+cache_manager.save_download_state(&download_cache)?;
 
-# 比较与基准的差异
-cargo bench --bench download_bench -- --baseline main
+// 恢复下载状态
+let cached_download = cache_manager.load_download_state("https://example.com/file.zip")?;
 ```
 
-基准测试包括：
+## 高级配置
 
-- 并行下载测试（3 个工作线程）
-- 串行下载测试（单线程）
+```rust
+use multhreadown::Config;
 
-测试配置：
+let config = Config::new()
+    .with_threads(8)                      // 设置下载线程数
+    .with_chunk_size(2 * 1024 * 1024)     // 设置每个块的大小（2MB）
+    .with_retry_attempts(5)               // 设置重试次数
+    .with_retry_delay(std::time::Duration::from_secs(3)) // 设置重试延迟
+    .with_rate_limit(Some(1024 * 1024))   // 限制下载速度为1MB/s
+    .with_connect_timeout(std::time::Duration::from_secs(30)) // 设置连接超时
+    .with_user_agent("MyDownloader/1.0"); // 设置用户代理
+```
 
-- 样本大小：10
-- 测量时间：20 秒
-- 预热时间：5 秒
-- 显著性水平：0.1
-- 噪声阈值：0.05
+## 命令行界面
 
-测试文件：
+Multhreadown 也提供了命令行界面：
 
-- README.md（小文件）
-- COPYRIGHT（小文件）
-- LICENSE-MIT（小文件）
+```bash
+# 安装命令行工具
+cargo install multhreadown
 
-基准测试结果将保存在 `target/criterion` 目录下，包含详细的性能报告和图表。
+# 使用命令行下载文件
+multhreadown download https://example.com/file.zip --output /path/to/downloads --threads 4
 
-## 📊 性能
+# 查看帮助
+multhreadown --help
+```
 
-- 支持并发下载，显著提升下载速度
-  - 并行下载比串行下载平均快 2-3 倍
-  - 自动调整并发数以优化性能
-- 智能的内存管理
-  - 使用异步 I/O 减少内存占用
-  - 自动清理临时文件
-- 高效的资源利用
-  - 支持断点续传减少带宽浪费
-  - 智能重试机制处理网络波动
+## 贡献
 
-## 🤝 贡献
+欢迎贡献！请随时提交问题或拉取请求。
 
-欢迎提交 Issue 和 Pull Request！
+## 许可证
 
-1. Fork 本仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的改动 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启一个 Pull Request
-
-## 📝 更新日志
-
-### v0.1.0 (2025-01-04)
-
-- ✨ 初始版本发布
-- 🚀 支持多线程下载
-- 💾 添加断点续传
-- 📊 添加下载统计
-- 🎮 添加交互式控制
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
-
-## 🙏 致谢
-
-- [tokio](https://tokio.rs/) - 异步运行时
-- [reqwest](https://docs.rs/reqwest/) - HTTP 客户端
-- [indicatif](https://docs.rs/indicatif/) - 进度显示
+本项目采用 MIT 。
