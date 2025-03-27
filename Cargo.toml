@@ -1,6 +1,6 @@
 [package]
 name = "multhreadown"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["littlepenguin66 <littlepenguinzq@gmail.com>"]
 description = "A multi-threaded download manager with resume capability"
